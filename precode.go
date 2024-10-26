@@ -53,7 +53,7 @@ func getAllTasks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 // Обработчик для отправки задачи на сервер
@@ -64,6 +64,10 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 	if err := json.Unmarshal(buf.Bytes(), &newTask); err != nil {
 		log.Printf("Ошибка при декодировании задачи: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if _, exists := tasks[newTask.ID]; exists {
+		http.Error(w, fmt.Sprintf("Задача с ID %s уже существует", newTask.ID), http.StatusBadRequest)
 		return
 	}
 	tasks[newTask.ID] = newTask
@@ -94,6 +98,7 @@ func getTaskByID(w http.ResponseWriter, r *http.Request) {
 // Обработчик удаления задачи по ID
 func deleteTaskByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	w.Header().Set("Content-Type", "application/json")
 	_, exists := tasks[id]
 	if !exists {
 		log.Printf("Задача для удаления с ID %s не найдена", id)
